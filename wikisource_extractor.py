@@ -22,7 +22,7 @@ def get_page_content(session: requests.Session, page: int) -> str:
 # Press the green button in the gutter to run the script.
 if __name__ == '__main__':
     START = 81
-    END = 139
+    END = 83
     with requests.Session() as s:
             s.headers.update({'User-Agent': 'User:Poslovitch'})
             lines = ""

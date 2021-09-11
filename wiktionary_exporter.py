@@ -1,4 +1,8 @@
 import csv
+import pywiki as pwb
+import configparser
+import os
+import time
 
 PAGE_TEMPLATE = """== {{langue|lorrain}} ==
 {{vérifier création automatique:Zéliqzon Moselle|$07}}
@@ -107,8 +111,22 @@ def get_patois(entry):
     return patois
 
 
+def is_already_present(page):
+    response = api.request(
+        {
+            "action": "query",
+            "format": "json",
+            "formatversion": "2",
+            "rvprop": "content",
+            "titles": page,
+        }
+    )
+
+    return "missing" not in response["query"]["pages"][0]
+
+
 if __name__ == '__main__':
-    FILENAME = "first_subset"
+    FILENAME = "data_81-83"
     words = dict()
     rows_to_work_on = []
     with open(FILENAME + ".csv", 'r', encoding="utf-8", newline='') as data_file:
@@ -119,12 +137,12 @@ if __name__ == '__main__':
             if not row["def1"]:
                 rows_to_work_on.append(row)
                 continue
-            print("[" + row["mot"] + "]")
             result = populate(row)
             if "UNKNOWN" in result:
                 rows_to_work_on.append(row)
                 continue
             # TODO gérer les "entrées multiples" (boc, par exemple, aura nom 1, nom 2, nom 3)
+            print("[" + row["mot"] + "]")
             print(result)
             if row["mot"] in words.keys():
                 result = words[row["mot"]] + "\n" + result
@@ -139,3 +157,22 @@ if __name__ == '__main__':
         csv_writer.writerows(rows_to_work_on)
 
     print(f"OK words/NEEDWORK words: {len(words)} / {len(rows_to_work_on)}")
+
+    print(words)
+
+    # Send to Wiktionary
+    accept = input("Send to Wiktionary ? [y/n]: ")
+    if accept == 'y':
+        config = configparser.ConfigParser()
+        res = config.read(os.path.dirname(os.path.realpath(__file__)) + "/config.ini")
+        if len(res) == 0:
+            raise OSError("config.ini does not exist")
+        user = config.get("wiki", "user")
+        password = config.get("wiki", "password")
+        api = pwb.Pywiki(user, password, "https://fr.wiktionary.org/w/api.php", "user")
+
+        for word in words:
+            print(word, is_already_present(word))
+            time.sleep(1)
+
+        pass
