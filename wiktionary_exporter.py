@@ -14,6 +14,7 @@ PAGE_TEMPLATE = """== {{langue|lorrain}} ==
 $04$05
 === {{S|prononciation}} ===
 {{Note API Zéliqzon|$06}}
+{{ébauche-pron-audio|lorrain}}
 
 === {{S|références}} ===
 ==== {{S|bibliographie}} ====
@@ -64,7 +65,7 @@ def populate(entry):
         if def_i:
             definitions += "# " + get_patois(entry) + def_i + "\n"
             if ex_i:
-                for example in ex_i.split('|'):
+                for example in ex_i.split('|'):  # TODO mettre des points à la fin des exemples et majuscules au début?
                     split_example = example.split('%')
                     definitions += "#* " + EXEMPLE.replace("$1", split_example[0]).replace("$2", split_example[1]) + "\n"
             else:
@@ -113,6 +114,7 @@ def get_patois(entry):
 
 
 def is_already_present(pagename):
+    # TODO: Check if there's a "lorrain" ({{langue|lorrain}}) entry in the page
     response = api.request(
         {
             "action": "query",
