@@ -24,7 +24,7 @@ VARIANTES_DIALECTALES = """==== {{S|variantes dialectales}} ===="""
 VARIANTE_DIALECTALE = "* {{lien|$0|lorrain}}"
 PATOIS_NOCAT = "{{Patois $0|nocat=1}}"
 PATOIS = "{{Patois $0}}"
-EBAUCHE_EXE = "{{ébauche-exe|lorrain}}"
+EBAUCHE_EXE = "{{exemple|lang=lorrain}}"
 EXEMPLE = "{{exemple|$1|sens=$2|lang=lorrain}}"
 VOCAB_APPARENTE = "==== {{S|vocabulaire}} ===="
 
