@@ -28,6 +28,7 @@ EBAUCHE_EXE = "{{ébauche-exe|lorrain}}"
 EXEMPLE = "{{exemple|$1|sens=$2|lang=lorrain}}"
 VOCAB_APPARENTE = "==== {{S|vocabulaire}} ===="
 
+
 def populate(entry):
     if "γ" in entry["prononciation"]:
         return "UNKNOWN LETTER IN PRONUNCIATION: γ"
@@ -111,18 +112,39 @@ def get_patois(entry):
     return patois
 
 
-def is_already_present(page):
+def is_already_present(pagename):
     response = api.request(
         {
             "action": "query",
             "format": "json",
             "formatversion": "2",
-            "rvprop": "content",
-            "titles": page,
+            "prop": "revisions",
+            "rvprop": "content|timestamp",
+            "titles": pagename,
+        }
+    )
+    page = response["query"]["pages"][0]
+    if "missing" in page:
+        return False, 0
+    else:
+        return True, page["revisions"][0]["timestamp"]
+
+
+def do_edit(page_name: str, wikicode, basetimestamp) -> bool:
+    result = api.request(
+        {
+            "action": "edit",
+            "format": "json",
+            "formatversion": "2",
+            "title": page_name,
+            "summary": "Import automatisé du Dictionnaire des patois romans de la Moselle de Zéliqzon",
+            "basetimestamp": basetimestamp,
+            "text": wikicode,
+            "token": api.get_csrf_token(),
         }
     )
 
-    return "missing" not in response["query"]["pages"][0]
+    return "edit" in result
 
 
 if __name__ == '__main__':
@@ -150,15 +172,14 @@ if __name__ == '__main__':
 
     # print(rows_to_work_on)
 
+    print(f"OK words/NEEDWORK words: {len(words)} / {len(rows_to_work_on)}")
     with open(FILENAME + ".remaining.csv", 'w', encoding="utf-8", newline='') as remaining:
         csv_writer = csv.DictWriter(remaining, fields)
 
         csv_writer.writeheader()
         csv_writer.writerows(rows_to_work_on)
 
-    print(f"OK words/NEEDWORK words: {len(words)} / {len(rows_to_work_on)}")
-
-    print(words)
+    words_in_existing_pages = []
 
     # Send to Wiktionary
     accept = input("Send to Wiktionary ? [y/n]: ")
@@ -172,7 +193,18 @@ if __name__ == '__main__':
         api = pwb.Pywiki(user, password, "https://fr.wiktionary.org/w/api.php", "user")
 
         for word in words:
-            print(word, is_already_present(word))
-            time.sleep(1)
+            present, basetimestamp = is_already_present(word)
+            if not present:
+                do_edit(word, words[word], basetimestamp)
+                print(word)
+                time.sleep(1)
+            else:
+                # Store in "remaining"
+                words_in_existing_pages.append(word)
 
-        pass
+    for word in words_in_existing_pages:
+        words.pop(word)
+
+    print(f"OK words/NEEDWORK words: {len(words)} / {len(rows_to_work_on) + len(words_in_existing_pages)}")
+    print(words_in_existing_pages)
+
